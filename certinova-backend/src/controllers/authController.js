@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 // @desc    Register a new user
 // @route   POST /api/auth/signup
@@ -107,9 +108,29 @@ export const login = async (req, res) => {
       });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured');
+
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        organisation: user.organisation,
+        email: user.email
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '7d' }
+    );
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      token,
       data: {
         user: {
           id: user._id,
